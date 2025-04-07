@@ -1,0 +1,54 @@
+
+group = 'cn.brucemaa'
+version = '0.0.1-SNAPSHOT'
+buildscript {
+	repositories{
+		maven {
+			url 'https://maven.aliyun.com/repository/public/'
+		}
+		mavenLocal()
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:3.4.4")
+	}
+}
+
+subprojects {
+	apply {
+		plugin 'java'
+		plugin 'org.springframework.boot'
+		plugin 'io.spring.dependency-management'
+	}
+
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(21)
+		}
+	}
+
+	configurations {
+		compileOnly {
+			extendsFrom annotationProcessor
+		}
+	}
+
+	repositories {
+		maven {
+			url 'https://maven.aliyun.com/repository/public/'
+		}
+		mavenLocal()
+		mavenCentral()
+	}
+
+	dependencies {
+		compileOnly 'org.projectlombok:lombok'
+		annotationProcessor 'org.projectlombok:lombok'
+		testImplementation 'org.springframework.boot:spring-boot-starter-test'
+		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	}
+
+	tasks.named('test') {
+		useJUnitPlatform()
+	}
+}

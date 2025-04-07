@@ -1,0 +1,3 @@
+rootProject.name = 'java-ai-demo'
+include 'spring-ai-demo'
+

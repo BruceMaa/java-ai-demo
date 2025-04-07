@@ -1,0 +1,13 @@
+server:
+  port: 8080
+  undertow:
+    threads:
+      io: 4                # IO线程数（建议按CPU核心数设置）
+      worker: 20           # 阻塞任务线程池大小
+    buffer-size: 1024      # 每块Buffer大小
+    direct-buffers: true   # 使用堆外内存提升性能
+
+spring:
+  threads:
+    virtual:
+      enabled: true        # 开启虚拟线程
