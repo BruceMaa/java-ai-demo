@@ -5,10 +5,12 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/v1")
@@ -47,5 +49,11 @@ public class ChatController {
     @GetMapping("/simple/chat")
     public String simpleChat(String query) {
         return dashScopeChatClient.prompt(query).call().content();
+    }
+
+    @GetMapping(path = "/stream/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> streamChat(String query) {
+        var chatResponse = dashScopeChatClient.prompt(query).stream().chatResponse();
+        return chatResponse.map(resp -> resp.getResult().getOutput().getText());
     }
 }
