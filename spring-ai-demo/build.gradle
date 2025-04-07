@@ -4,4 +4,6 @@ dependencies {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
     }
     implementation 'org.springframework.boot:spring-boot-starter-undertow'
+
+    implementation 'com.alibaba.cloud.ai:spring-ai-alibaba-starter:1.0.0-M6.1'
 }
