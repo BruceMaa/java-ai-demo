@@ -9,6 +9,13 @@
       />
     </div>
     <div class="input-container">
+      <div class="controls">
+        <label class="switch">
+          <input type="checkbox" v-model="useTypewriter">
+          <span class="slider"></span>
+        </label>
+        <span class="switch-label">流式响应</span>
+      </div>
       <div class="input-group">
         <textarea
           v-model="newMessage"
@@ -28,11 +35,12 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
 import ChatMessage from './ChatMessage.vue';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 const messages = ref([]);
 const newMessage = ref('');
 const messagesContainer = ref(null);
-const useTypewriter = ref(true);
+const useTypewriter = ref(false);
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -55,23 +63,57 @@ const sendMessage = async () => {
   await scrollToBottom();
 
   try {
-    // 调用后端API
-    const response = await fetch(`/v1/simple/chat?query=${encodeURIComponent(messageText)}`, {
-      method: 'GET'
-    });
-
-    if (!response.ok) {
-      throw new Error('API请求失败');
-    }
-
-    const responseText = await response.text();
-    
-    // 添加AI回复消息
-    messages.value.push({
+    // 创建AI消息对象并添加到消息列表
+    const aiMessage = ref({
       isUser: false,
-      text: responseText
+      text: ''
     });
-    await scrollToBottom();
+    messages.value.push(aiMessage.value);
+
+    if (useTypewriter.value) {
+      // 流式响应
+      await fetchEventSource(`/v1/stream/chat?query=${encodeURIComponent(messageText)}`, {
+        method: 'GET',
+        onmessage(ev) {
+          try {
+            const data = ev.data.trim();
+            if (!data) return;
+            
+            // 尝试解析JSON，如果失败则直接使用原始数据
+            try {
+              const jsonData = JSON.parse(data);
+              aiMessage.value.text += jsonData.content || jsonData.message || data;
+            } catch {
+              aiMessage.value.text += data;
+            }
+            
+            scrollToBottom();
+          } catch (error) {
+            console.error('处理消息时出错:', error);
+          }
+        },
+        onclose() {
+          console.log('Stream closed');
+        },
+        onerror(err) {
+          console.error('Stream error:', err);
+          throw err;
+        }
+      });
+    } else {
+      // 普通响应
+      const response = await fetch(`/v1/simple/chat?query=${encodeURIComponent(messageText)}`, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        throw new Error('API请求失败');
+      }
+
+      const responseText = await response.text();
+      aiMessage.value.text = responseText;
+      await scrollToBottom();
+    }
   } catch (error) {
     console.error('发送消息失败:', error);
     messages.value.push({
@@ -79,7 +121,6 @@ const sendMessage = async () => {
       text: '抱歉，发生了一些错误，请稍后再试。'
     });
   }
-
   await scrollToBottom();
 };
 
