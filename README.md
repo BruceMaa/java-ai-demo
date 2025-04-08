@@ -4,10 +4,22 @@
 
 ## 计划
 - [x] Spring Boot Web
-- [ ] Spring AI
-- [ ] Spring AI Alibaba
+- [x] frontend
+- [x] Spring AI
+- [x] Spring AI Alibaba
+- [ ] Spring AI ChatClient
+- [ ] Spring AI ChatModel
+- [ ] Spring AI ChatOptions
+- [ ] Spring AI Prompt
+- [ ] Spring AI ChatMemory
+- [ ] Spring AI Embedding Model
+- [ ] Spring AI Document Retriever
+- [ ] Spring AI Vector Store
+- [ ] Spring AI RAG
+- [ ] Spring AI Tools
+- [ ] Spring AI Model Context Protocol
+- [ ] Spring AI Structured Output
 - [ ] langchain4j
-- [ ] frontend
 
 ## 技术栈
 
