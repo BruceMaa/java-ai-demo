@@ -72,8 +72,14 @@ const sendMessage = async () => {
 
     if (useTypewriter.value) {
       // 流式响应
-      await fetchEventSource(`/v1/stream/chat?query=${encodeURIComponent(messageText)}`, {
-        method: 'GET',
+      await fetchEventSource(`/v1/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: messageText
+        }),
         onmessage(ev) {
           try {
             const data = ev.data.trim();
@@ -82,8 +88,9 @@ const sendMessage = async () => {
             // 尝试解析JSON，如果失败则直接使用原始数据
             try {
               const jsonData = JSON.parse(data);
-              aiMessage.value.text += jsonData.content || jsonData.message || data;
+              aiMessage.value.text += jsonData.content;
             } catch {
+              console.log('Failed to parse JSON, using raw data', data);
               aiMessage.value.text += data;
             }
             
@@ -102,16 +109,22 @@ const sendMessage = async () => {
       });
     } else {
       // 普通响应
-      const response = await fetch(`/v1/simple/chat?query=${encodeURIComponent(messageText)}`, {
-        method: 'GET'
+      const response = await fetch(`/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: messageText
+        })
       });
 
       if (!response.ok) {
         throw new Error('API请求失败');
       }
 
-      const responseText = await response.text();
-      aiMessage.value.text = responseText;
+      const responseData = await response.json();
+      aiMessage.value.text = responseData.content;
       await scrollToBottom();
     }
   } catch (error) {

@@ -7,7 +7,7 @@
 - [x] frontend
 - [x] Spring AI
 - [x] Spring AI Alibaba
-- [ ] Spring AI ChatClient
+- [x] Spring AI ChatClient
 - [ ] Spring AI ChatModel
 - [ ] Spring AI ChatOptions
 - [ ] Spring AI Prompt

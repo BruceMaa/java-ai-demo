@@ -1,17 +1,22 @@
 package cn.brucemaa.ai.demo.controller;
 
+import cn.brucemaa.ai.demo.vo.ChatRequestVO;
+import cn.brucemaa.ai.demo.vo.ChatResponseVO;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
+import java.nio.charset.StandardCharsets;
+
+@Slf4j
 @RestController
 @RequestMapping("/v1")
 public class ChatController {
@@ -46,14 +51,27 @@ public class ChatController {
         return ResponseEntity.ok("Hello, World!");
     }
 
-    @GetMapping("/simple/chat")
-    public String simpleChat(String query) {
-        return dashScopeChatClient.prompt(query).call().content();
+    @PostMapping(path = "/chat/completions", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ChatResponseVO chatCompletions(@RequestBody ChatRequestVO chatRequestVO) {
+        var respContent = dashScopeChatClient.prompt(chatRequestVO.getContent()).call().content();
+        var chatResponseVO = new ChatResponseVO();
+        chatResponseVO.setStreamResp(chatRequestVO.isStreamResp());
+        if (respContent == null || respContent.isBlank()) {
+            respContent = "没有响应信息";
+        }
+        chatResponseVO.setContent(respContent);
+        return chatResponseVO;
     }
 
-    @GetMapping(path = "/stream/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamChat(String query) {
-        var chatResponse = dashScopeChatClient.prompt(query).stream().chatResponse();
-        return chatResponse.map(resp -> resp.getResult().getOutput().getText());
+    @PostMapping(path = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Flux<ChatResponseVO> chatStream(HttpServletResponse response, @RequestBody ChatRequestVO chatRequestVO) {
+        response.setCharacterEncoding(StandardCharsets.UTF_8.displayName());
+        var chatResponseFlux = dashScopeChatClient.prompt(chatRequestVO.getContent()).stream().chatResponse();
+        return chatResponseFlux.map(chatResponse -> {
+            var chatResponseVO = new ChatResponseVO();
+            chatResponseVO.setStreamResp(chatRequestVO.isStreamResp());
+            chatResponseVO.setContent(chatResponse.getResult().getOutput().getText());
+            return chatResponseVO;
+        });
     }
 }
