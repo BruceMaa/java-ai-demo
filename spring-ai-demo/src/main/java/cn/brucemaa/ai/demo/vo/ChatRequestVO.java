@@ -12,6 +12,11 @@ import lombok.experimental.FieldDefaults;
 public class ChatRequestVO {
 
     /**
+     * 模型
+     */
+    String modelId;
+
+    /**
      * 用户输入的文字内容
      */
     String content;

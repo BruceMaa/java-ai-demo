@@ -10,6 +10,12 @@ import lombok.experimental.FieldDefaults;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ChatResponseVO {
+
+    /**
+     * 模型
+     */
+    String modelId;
+
     /**
      * AI返回的文字内容
      */

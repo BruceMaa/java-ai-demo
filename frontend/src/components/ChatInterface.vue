@@ -15,6 +15,11 @@
           <span class="slider"></span>
         </label>
         <span class="switch-label">流式响应</span>
+        <select v-model="selectedModel" class="model-select" :disabled="!models.length">
+          <option v-for="model in models" :key="model.modelId" :value="model.modelId">
+            {{ model.modelName }}
+          </option>
+        </select>
       </div>
       <div class="input-group">
         <textarea
@@ -41,6 +46,21 @@ const messages = ref([]);
 const newMessage = ref('');
 const messagesContainer = ref(null);
 const useTypewriter = ref(false);
+const models = ref([]);
+const selectedModel = ref('');
+
+const fetchModels = async () => {
+  try {
+    const response = await fetch('/v1/models');
+    if (!response.ok) throw new Error('获取模型列表失败');
+    models.value = await response.json();
+    if (models.value.length > 0) {
+      selectedModel.value = models.value[0].modelId;
+    }
+  } catch (error) {
+    console.error('获取模型列表失败:', error);
+  }
+};
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -51,7 +71,7 @@ const scrollToBottom = async () => {
 
 const sendMessage = async () => {
   const messageText = newMessage.value.trim();
-  if (!messageText) return;
+  if (!messageText || !selectedModel.value) return;
 
   // 添加用户消息
   messages.value.push({
@@ -78,7 +98,8 @@ const sendMessage = async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          content: messageText
+          content: messageText,
+          modelId: selectedModel.value
         }),
         onmessage(ev) {
           try {
@@ -115,7 +136,8 @@ const sendMessage = async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          content: messageText
+          content: messageText,
+          modelId: selectedModel.value
         })
       });
 
@@ -138,6 +160,7 @@ const sendMessage = async () => {
 };
 
 onMounted(() => {
+  fetchModels();
   // 添加欢迎消息
   messages.value.push({
     isUser: false,
@@ -266,6 +289,26 @@ input:checked + .slider:before {
 
 .send-button:disabled {
   background-color: #e5e5e5;
+  cursor: not-allowed;
+}
+
+.model-select {
+  padding: 0.5rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #374151;
+  background-color: white;
+  cursor: pointer;
+}
+
+.model-select:focus {
+  outline: none;
+  border-color: #4f46e5;
+}
+
+.model-select:disabled {
+  background-color: #f3f4f6;
   cursor: not-allowed;
 }
 </style>

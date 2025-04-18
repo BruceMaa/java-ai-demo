@@ -8,7 +8,7 @@
 - [x] Spring AI
 - [x] Spring AI Alibaba
 - [x] Spring AI ChatClient
-- [ ] Spring AI ChatModel
+- [x] Spring AI ChatModel
 - [ ] Spring AI ChatOptions
 - [ ] Spring AI Prompt
 - [ ] Spring AI ChatMemory
