@@ -48,20 +48,36 @@ public class ChatController {
                 .build();
     }
 
+    private static DashScopeChatOptions getOptions(ChatRequestVO chatRequestVO) {
+        return DashScopeChatOptions.builder()
+                .withModel(chatRequestVO.getModelId())
+                .withTemperature(chatRequestVO.getTemperature())
+                .withSeed(chatRequestVO.getSeed())
+                .withTopP(chatRequestVO.getTopP())
+                .withTopK(chatRequestVO.getTopK())
+                .withStop(chatRequestVO.getStop())
+                .withEnableSearch(chatRequestVO.getEnableSearch())
+                .withMaxToken(chatRequestVO.getMaxTokens())
+                .withIncrementalOutput(chatRequestVO.getIncrementalOutput())
+                .withRepetitionPenalty(chatRequestVO.getRepetitionPenalty())
+                .build();
+    }
+
     @PostMapping(path = "/completions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ChatResponseVO chatCompletions(@RequestBody ChatRequestVO chatRequestVO) {
-        var respContent = dashScopeChatClient.prompt()
-                .options(DashScopeChatOptions.builder()
-                        .withModel(chatRequestVO.getModelId())
-                        .build())
+        var chatResponse = dashScopeChatClient.prompt()
+                .options(getOptions(chatRequestVO))
                 .user(chatRequestVO.getContent())
-                .call().content();
+                .call().chatResponse();
+        String respContent;
+        if (chatResponse != null) {
+            respContent = chatResponse.getResult().getOutput().getText();
+        } else {
+            respContent = "没有响应信息";
+        }
         var chatResponseVO = new ChatResponseVO();
         chatResponseVO.setStreamResp(chatRequestVO.isStreamResp());
         chatResponseVO.setModelId(chatRequestVO.getModelId());
-        if (respContent == null || respContent.isBlank()) {
-            respContent = "没有响应信息";
-        }
         chatResponseVO.setContent(respContent);
         return chatResponseVO;
     }
@@ -70,9 +86,7 @@ public class ChatController {
     public Flux<ChatResponseVO> chatStream(HttpServletResponse response, @RequestBody ChatRequestVO chatRequestVO) {
         response.setCharacterEncoding(StandardCharsets.UTF_8.displayName());
         var chatResponseFlux = dashScopeChatClient.prompt()
-                .options(DashScopeChatOptions.builder()
-                        .withModel(chatRequestVO.getModelId())
-                        .build())
+                .options(getOptions(chatRequestVO))
                 .user(chatRequestVO.getContent())
                 .stream().chatResponse();
         return chatResponseFlux.map(chatResponse -> {
