@@ -11,7 +11,7 @@
 - [x] Spring AI ChatModel
 - [x] Spring AI ChatOptions
 - [ ] Spring AI Prompt
-- [ ] Spring AI ChatMemory
+- [x] Spring AI ChatMemory
 - [ ] Spring AI Embedding Model
 - [ ] Spring AI Document Retriever
 - [ ] Spring AI Vector Store
@@ -30,3 +30,9 @@
 - Spring AI Alibaba
 - langchain4j
 - Vue3
+
+## 参考
+
+- [Spring AI](https://docs.spring.io/spring-ai/reference)
+- [Spring AI Alibaba](https://java2ai.com)
+- [提示工程指南](https://www.promptingguide.ai/zh)

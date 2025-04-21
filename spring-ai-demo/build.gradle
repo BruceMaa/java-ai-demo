@@ -6,4 +6,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-undertow'
 
     implementation 'com.alibaba.cloud.ai:spring-ai-alibaba-starter:1.0.0-M6.1'
+
+    implementation 'org.springframework.ai:spring-ai-starter-model-chat-memory-jdbc'
+    runtimeOnly 'org.postgresql:postgresql'
 }

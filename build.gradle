@@ -1,6 +1,10 @@
 
 group = 'cn.brucemaa'
 version = '0.0.1-SNAPSHOT'
+
+ext {
+	set('springAiVersion', "1.0.0-M7")
+}
 buildscript {
 	repositories{
 		maven {
@@ -39,6 +43,12 @@ subprojects {
 		}
 		mavenLocal()
 		mavenCentral()
+	}
+
+	dependencyManagement {
+		imports {
+			mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+		}
 	}
 
 	dependencies {

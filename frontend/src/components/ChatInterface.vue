@@ -44,6 +44,14 @@
       <div class="drawer-content">
         <div class="setting-item">
           <label class="setting-label">
+            <span>对话标识</span>
+            <div class="conversation-id">
+              {{ conversationId }}
+            </div>
+          </label>
+        </div>
+        <div class="setting-item">
+          <label class="setting-label">
             <span>流式响应</span>
             <label class="switch">
               <input type="checkbox" v-model="useTypewriter">
@@ -150,6 +158,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import ChatMessage from './ChatMessage.vue';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
+import { ulid } from 'ulid';
 
 const messages = ref([]);
 const newMessage = ref('');
@@ -164,6 +173,7 @@ const seed = ref();
 const topP = ref(0.8);
 const topK = ref(50);
 const showDrawer = ref(false);
+const conversationId = ref(ulid());
 
 const fetchModels = async () => {
   try {
@@ -215,6 +225,7 @@ const sendMessage = async () => {
         },
         body: JSON.stringify({
           content: messageText,
+          conversationId: conversationId.value,
           modelId: selectedModel.value,
           temperature: temperature.value,
           seed: seed.value,
@@ -259,6 +270,7 @@ const sendMessage = async () => {
         },
         body: JSON.stringify({
           content: messageText,
+          conversationId: conversationId.value,
           modelId: selectedModel.value,
           temperature: temperature.value,
           seed: seed.value,
@@ -289,6 +301,8 @@ const sendMessage = async () => {
 
 onMounted(() => {
   fetchModels();
+  // 生成新的对话ID
+  conversationId.value = ulid();
   // 添加欢迎消息
   messages.value.push({
     isUser: false,
@@ -632,6 +646,16 @@ input:checked + .slider:before {
   background-color: #f3f4f6;
   border-radius: 4px;
   font-size: 0.875rem;
+}
+
+.conversation-id {
+  padding: 0.5rem;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #4f46e5;
+  user-select: all;
 }
 
 .remove-button {
