@@ -10,11 +10,11 @@
 - [x] Spring AI ChatClient
 - [x] Spring AI ChatModel
 - [x] Spring AI ChatOptions
-- [ ] Spring AI Prompt
 - [x] Spring AI ChatMemory
-- [ ] Spring AI Embedding Model
+- [x] Spring AI Embedding Model
+- [x] Spring AI Vector Store
+- [ ] Spring AI Prompt
 - [ ] Spring AI Document Retriever
-- [ ] Spring AI Vector Store
 - [ ] Spring AI RAG
 - [ ] Spring AI Tools
 - [ ] Spring AI Model Context Protocol
