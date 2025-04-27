@@ -5,10 +5,8 @@ import cn.brucemaa.ai.demo.vo.StoreResponseVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +18,12 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping(value = "/v1/store", consumes = MediaType.APPLICATION_JSON_VALUE)
-@DependsOn("simpleVectorStore")
 public class StoreController {
 
-    private final SimpleVectorStore simpleVectorStore;
+    private final VectorStore vectorStore;
 
-    public StoreController(@Qualifier("simpleVectorStore") SimpleVectorStore simpleVectorStore) {
-        this.simpleVectorStore = simpleVectorStore;
+    public StoreController(VectorStore vectorStore) {
+        this.vectorStore = vectorStore;
     }
 
     @PostMapping
@@ -34,18 +31,18 @@ public class StoreController {
         if (storeRequestVO.getMetadata() == null) {
             storeRequestVO.setMetadata(new HashMap<>());
         }
-        storeRequestVO.getMetadata().put("1", "1");
+        storeRequestVO.getMetadata().put("innerMeta", "test");
         var document = Document.builder()
                 .text(storeRequestVO.getText())
                 .metadata(storeRequestVO.getMetadata())
                 .build();
-        simpleVectorStore.add(List.of(document));
+        vectorStore.add(List.of(document));
         return ResponseEntity.ok(new StoreResponseVO(document.getId()));
     }
 
     @DeleteMapping(path = "/{documentId}")
     public ResponseEntity<String> delete(@PathVariable String documentId) {
-        simpleVectorStore.delete(List.of(documentId));
+        vectorStore.delete(List.of(documentId));
         return ResponseEntity.ok("success");
     }
 
@@ -53,7 +50,7 @@ public class StoreController {
     public ResponseEntity<List<Document>> search(@RequestBody StoreRequestVO storeRequestVO) {
         var filterExpressionBuilder = new FilterExpressionBuilder();
         var metadata = storeRequestVO.getMetadata();
-        var expression = filterExpressionBuilder.eq("1", "1");
+        var expression = filterExpressionBuilder.eq("innerMeta", "test");
         if (metadata != null && !metadata.isEmpty()) {
             for (Map.Entry<String, Object> entry : metadata.entrySet()) {
                 String k = entry.getKey();
@@ -66,6 +63,6 @@ public class StoreController {
                 .filterExpression(expression.build())
                 .topK(5)
                 .build();
-        return ResponseEntity.ok(simpleVectorStore.doSimilaritySearch(searchRequest));
+        return ResponseEntity.ok(vectorStore.similaritySearch(searchRequest));
     }
 }

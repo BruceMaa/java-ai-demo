@@ -16,8 +16,14 @@ spring:
   ai:
     dashscope:
       api-key: ${YOUR_DASHSCOPE_API_KEY}
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+        max-document-batch-size: 10000
   datasource:
-
     url: jdbc:postgresql://${YOUR_DATABASE_URL}:5432/yifan?sslmode=require
     username: ${YOUR_DATABASE_USERNAME}
     password: ${YOUR_DATABASE_PASSWORD}

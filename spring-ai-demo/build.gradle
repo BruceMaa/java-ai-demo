@@ -9,4 +9,6 @@ dependencies {
 
     implementation 'org.springframework.ai:spring-ai-starter-model-chat-memory-jdbc'
     runtimeOnly 'org.postgresql:postgresql'
+
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
 }
