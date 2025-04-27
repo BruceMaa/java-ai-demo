@@ -13,8 +13,8 @@
 - [x] Spring AI ChatMemory
 - [x] Spring AI Embedding Model
 - [x] Spring AI Vector Store
+- [x] Spring AI Document Retriever
 - [ ] Spring AI Prompt
-- [ ] Spring AI Document Retriever
 - [ ] Spring AI RAG
 - [ ] Spring AI Tools
 - [ ] Spring AI Model Context Protocol
