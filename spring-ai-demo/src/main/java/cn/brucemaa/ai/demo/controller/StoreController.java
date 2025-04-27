@@ -5,8 +5,10 @@ import cn.brucemaa.ai.demo.vo.StoreResponseVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,13 +19,23 @@ import java.util.Map;
 
 @Slf4j
 @RestController
+@DependsOn({"simpleVectorStore"})
 @RequestMapping(value = "/v1/store", consumes = MediaType.APPLICATION_JSON_VALUE)
 public class StoreController {
 
+    private final VectorStore simpleVectorStore;
     private final VectorStore vectorStore;
 
-    public StoreController(VectorStore vectorStore) {
+    public StoreController(SimpleVectorStore simpleVectorStore, VectorStore vectorStore) {
+        this.simpleVectorStore = simpleVectorStore;
         this.vectorStore = vectorStore;
+    }
+
+    private VectorStore getVectorStore(StoreRequestVO storeRequestVO) {
+        return switch (storeRequestVO.getType()) {
+            case PG_VECTOR -> vectorStore;
+            case null, default -> simpleVectorStore;
+        };
     }
 
     @PostMapping
@@ -36,13 +48,13 @@ public class StoreController {
                 .text(storeRequestVO.getText())
                 .metadata(storeRequestVO.getMetadata())
                 .build();
-        vectorStore.add(List.of(document));
+        getVectorStore(storeRequestVO).add(List.of(document));
         return ResponseEntity.ok(new StoreResponseVO(document.getId()));
     }
 
     @DeleteMapping(path = "/{documentId}")
-    public ResponseEntity<String> delete(@PathVariable String documentId) {
-        vectorStore.delete(List.of(documentId));
+    public ResponseEntity<String> delete(@PathVariable String documentId, @RequestBody StoreRequestVO storeRequestVO) {
+        getVectorStore(storeRequestVO).delete(List.of(documentId));
         return ResponseEntity.ok("success");
     }
 
@@ -63,6 +75,6 @@ public class StoreController {
                 .filterExpression(expression.build())
                 .topK(5)
                 .build();
-        return ResponseEntity.ok(vectorStore.similaritySearch(searchRequest));
+        return ResponseEntity.ok(getVectorStore(storeRequestVO).similaritySearch(searchRequest));
     }
 }
