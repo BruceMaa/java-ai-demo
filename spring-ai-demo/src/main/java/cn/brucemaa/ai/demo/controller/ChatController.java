@@ -7,9 +7,22 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.memory.jdbc.JdbcChatMemory;
+import org.springframework.ai.rag.Query;
+import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
+import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
+import org.springframework.ai.rag.preretrieval.query.transformation.CompressionQueryTransformer;
+import org.springframework.ai.rag.preretrieval.query.transformation.QueryTransformer;
+import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
+import org.springframework.ai.rag.preretrieval.query.transformation.TranslationQueryTransformer;
+import org.springframework.ai.rag.retrieval.join.ConcatenationDocumentJoiner;
+import org.springframework.ai.rag.retrieval.join.DocumentJoiner;
+import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
@@ -31,8 +45,11 @@ public class ChatController {
 
     private final ChatClient dashScopeChatClient;
     private final JdbcChatMemory jdbcChatMemory;
+    private final ChatClient.Builder chatClientBuilder;
+    private final VectorStore vectorStore;
 
-    public ChatController(ChatClient.Builder chatClientBuilder, JdbcChatMemory jdbcChatMemory) {
+    public ChatController(ChatClient.Builder chatClientBuilder, JdbcChatMemory jdbcChatMemory, VectorStore vectorStore) {
+        this.chatClientBuilder = chatClientBuilder;
         this.dashScopeChatClient = chatClientBuilder
                 .defaultSystem(DEFAULT_PROMPT)
                 // 实现 Chat Memory 的 Advisor
@@ -52,6 +69,7 @@ public class ChatController {
                 )
                 .build();
         this.jdbcChatMemory = jdbcChatMemory;
+        this.vectorStore = vectorStore;
     }
 
     private static DashScopeChatOptions getOptions(ChatRequestVO chatRequestVO) {
@@ -71,6 +89,48 @@ public class ChatController {
 
     @PostMapping(path = "/completions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ChatResponseVO chatCompletions(@RequestBody ChatRequestVO chatRequestVO) {
+
+        // 构建查询扩展器
+        // 用于生成多个相关的查询变体，以获得更全面的搜索结果
+        var queryExpander = MultiQueryExpander.builder()
+                .chatClientBuilder(this.chatClientBuilder)
+                .includeOriginal(false)
+                .numberOfQueries(3)
+                .build();
+
+        // 创建查询重写转换器
+        QueryTransformer rewriteQueryTransformer = RewriteQueryTransformer.builder()
+                .chatClientBuilder(this.chatClientBuilder)
+                .build();
+
+        // 创建查询翻译转换器，设置目标语言为中文
+        QueryTransformer translationQueryTransformer = TranslationQueryTransformer.builder()
+                .chatClientBuilder(this.chatClientBuilder)
+                .targetLanguage("chinese")  // 设置目标语言为中文
+                .build();
+
+        // 创建查询压缩转换器
+        QueryTransformer compressionQueryTransformer = CompressionQueryTransformer.builder()
+                .chatClientBuilder(this.chatClientBuilder)
+                .build();
+
+        // 创建文档合并器实例
+        DocumentJoiner documentJoiner = new ConcatenationDocumentJoiner();
+
+        // 3. 创建检索增强顾问
+        Advisor advisor = RetrievalAugmentationAdvisor.builder()
+                .queryExpander(queryExpander)
+                .queryTransformers(rewriteQueryTransformer, translationQueryTransformer, compressionQueryTransformer)
+                .documentJoiner(documentJoiner)
+                // 配置查询增强器
+                .queryAugmenter(ContextualQueryAugmenter.builder()
+                        .allowEmptyContext(true)
+                        .build())
+                .documentRetriever(VectorStoreDocumentRetriever.builder()
+                        .vectorStore(vectorStore)
+                        .build())
+                .build();
+
         var chatResponse = dashScopeChatClient.prompt()
                 .options(getOptions(chatRequestVO))
                 .advisors(new MessageChatMemoryAdvisor(jdbcChatMemory))

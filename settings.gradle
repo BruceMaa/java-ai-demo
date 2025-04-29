@@ -1,3 +1,4 @@
 rootProject.name = 'java-ai-demo'
 include 'spring-ai-demo'
+include 'langchain4j-demo'
 

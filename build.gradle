@@ -4,6 +4,9 @@ version = '0.0.1-SNAPSHOT'
 
 ext {
 	set('springAiVersion', "1.0.0-M7")
+	set('knife4jVersion', "4.3.0")
+	set('langchain4jVersion', "1.0.0-beta3")
+	set('mybatisPlusVersion', "3.5.11")
 }
 buildscript {
 	repositories{
